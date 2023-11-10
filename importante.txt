@@ -1,0 +1,4 @@
+printf("flight_id: %s, scheduled_departure: %s, scheduled_arrival: %s, transbordos: %s,asientos_vacios: %s, tiempo %s\n", flight_id, scheduled_departure, scheduled_arrival, transbordos,asientos_vacios, tiempo);
+        
+
+select * from flights where scheduled_departure > ? and scheduled_arrival < ? and departure_airport = ?  and arrival_airport=? limit 10 
