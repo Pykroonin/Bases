@@ -1,4 +1,5 @@
-with tickets_ours as (select t.passenger_name, tf.ticket_no, tf.flight_id, f.scheduled_departure, tf.fare_conditions, tf.amount from flights f natural join ticket_flights tf natural join tickets t natural join bookings b where b.book_ref = '0002F3' order by tf.ticket_no),
+with tickets_ours as (select t.passenger_name, t.ticket_no, tf.flight_id, f.scheduled_departure, tf.fare_conditions, tf.amount, row_number() over
+(partition by tf.flight_id order by t.ticket_no ) as posicion from flights f natural join ticket_flights tf natural join tickets t natural join bookings b where b.book_ref = '8E6BB3' and not exists (select 1 from boarding_passes bp where bp.flight_id =tf.flight_id AND bp.ticket_no = t.ticket_no) order by tf.ticket_no),
 	asientos_totales
      AS (SELECT tou.flight_id,
                 s.seat_no AS asientos,
@@ -27,10 +28,12 @@ with tickets_ours as (select t.passenger_name, tf.ticket_no, tf.flight_id, f.sch
 asientos_libres AS (
     SELECT att.flight_id,
            att.asientos AS vacios,
-           att.aircraft_code
-    FROM asientos_totales att
-    LEFT JOIN asientos_ocupados aoc ON att.flight_id = aoc.flight_id AND att.asientos = aoc.asientos
-    WHERE aoc.flight_id IS NULL AND aoc.asientos IS null)
-select tou.passenger_name, tou.ticket_no, tou.flight_id, tou.scheduled_departure, tou.fare_conditions,tou.amount, min(al.vacios), al.aircraft_code from tickets_ours tou join asientos_libres al on tou.flight_id = al.flight_id group by tou.passenger_name, tou.scheduled_departure, tou.ticket_no, tou.flight_id,tou.fare_conditions,tou.amount,al.aircraft_code
-
--- insert into boarding_passes (ticket_no, flight_id, boarding_no, seat_no) values (los que sean)
+          ROW_NUMBER() OVER (PARTITION BY att.flight_id ORDER BY att.flight_id, att.asientos) AS numero
+ FROM asientos_totales att
+ WHERE NOT EXISTS (
+   SELECT 1
+   FROM asientos_ocupados ao
+   WHERE ao.flight_id = att.flight_id AND ao.asientos = att.asientos))
+SELECT t.passenger_name, v.flight_id, f.scheduled_departure, av.vacios
+FROM asientos_libres av, tickets_ours v, tickets t, flights f
+where v.flight_id = av.flight_id and v.posicion = av.numero and t.ticket_no = v.ticket_no and f.flight_id = v.flight_id
