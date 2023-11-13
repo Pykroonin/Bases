@@ -67,7 +67,7 @@ WITH booking_pasajeros
 SELECT bps.passenger_name,
        bps.flight_id,
        bps.scheduled_departure,
-       av.vacios
+       al.vacios
 FROM   asientos_libres al,
        booking_pasajeros bps
 WHERE  bps.flight_id = al.flight_id
