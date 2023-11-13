@@ -71,4 +71,4 @@ SELECT bps.passenger_name,
 FROM   asientos_libres al,
        booking_pasajeros bps
 WHERE  bps.flight_id = al.flight_id
-       AND bps.posicion = al.posicion
+       AND bps.posicion = al.posicion  
