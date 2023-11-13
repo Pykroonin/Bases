@@ -3,8 +3,6 @@ WITH booking_pasajeros
                 t.ticket_no,
                 tf.flight_id,
                 f.scheduled_departure,
-                tf.fare_conditions,
-                tf.amount,
                 Row_number()
                   OVER (
                     partition BY tf.flight_id
@@ -13,7 +11,7 @@ WITH booking_pasajeros
                 natural JOIN ticket_flights tf
                 natural JOIN tickets t
                 natural JOIN bookings b
-         WHERE  b.book_ref = '8E6BB3'
+         WHERE  b.book_ref = '4A1A3A'
                 AND NOT EXISTS (SELECT '1'
                                 FROM   boarding_passes bp
                                 WHERE  bp.flight_id = tf.flight_id
@@ -71,4 +69,5 @@ SELECT bps.passenger_name,
 FROM   asientos_libres al,
        booking_pasajeros bps
 WHERE  bps.flight_id = al.flight_id
-       AND bps.posicion = al.posicion  
+       AND bps.posicion = al.posicion
+
