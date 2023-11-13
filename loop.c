@@ -67,6 +67,11 @@ void loop(_Windows *windows, _Menus *menus,
     int out_highlight = 0; /* line highlighted in win_out window */
     int rows_out_window = 0; /* size of win_out window */
     int i = 0; /* dummy variable for loops */
+    int page=1;
+    int des=0;
+    int max_pages=1;
+    int rows_last_page=1;
+    int max_rows;
 
     (void) curs_set(1); /* show cursor */
     menu = menus->menu;
@@ -74,11 +79,14 @@ void loop(_Windows *windows, _Menus *menus,
     out_win = windows->out_win;
     msg_win = windows->msg_win;
     rows_out_window = windows->terminal_nrows - 2 * windows->height_menu_win - 1;
-
+   /* windows->rows_out_win=7;esta linea es pa probar que va lo de las paginas*/
+    max_rows=windows->rows_out_win-2;
     while ((bool) TRUE) {
+
         ch = getch(); /* get char typed by user */
         if ((bool)DEBUG) {
-            (void)snprintf(buffer, 128, "key pressed %d %c (%d)",  ch, ch, item_index(auxItem));
+            /*(void)snprintf(buffer, 128, "key pressed %d %c (%d)",  ch, ch, item_index(auxItem));*/
+            (void)snprintf(buffer, 128, "hilighted:%d, max_pages:%d, page:%d, n_out_choices:%d, max_rows:%d", out_highlight,max_pages, page, n_out_choices, max_rows);
             write_msg(msg_win, buffer, -1, -1, windows->msg_title);
         }
         switch (ch) {
@@ -130,9 +138,9 @@ void loop(_Windows *windows, _Menus *menus,
                     (void) form_driver(forms->bpass_form, REQ_END_LINE);
                     (void) wrefresh(windows->form_bpass_win);
                 }  else if (focus == FOCUS_RIGHT){
-                    out_highlight = MAX(out_highlight - 1, 0);
-                    print_out(out_win, menus->out_win_choices, n_out_choices,
-                              out_highlight, windows->out_title);
+                    out_highlight = MAX(out_highlight - 1, 0+des);
+                    print_out(out_win, menus->out_win_choices,1+des,MIN(max_rows, n_out_choices)+des,
+                                out_highlight, windows->out_title);
                 }
                 break;
             case KEY_DOWN:
@@ -146,9 +154,14 @@ void loop(_Windows *windows, _Menus *menus,
                     (void) form_driver(forms->bpass_form, REQ_END_LINE);
                     (void) wrefresh(windows->form_bpass_win);
                 } else if (focus == FOCUS_RIGHT){
-                    out_highlight = MIN(out_highlight + 1, n_out_choices-1);
-                    print_out(out_win, menus->out_win_choices, n_out_choices,
-                              out_highlight, windows->out_title);
+                    if(page==max_pages){
+                        out_highlight = MIN(out_highlight + 1, rows_last_page+des-1);
+                    }
+                    else{
+                        out_highlight = MIN(out_highlight + 1, MIN(max_rows, n_out_choices)-1+des);
+                    }
+                    print_out(out_win, menus->out_win_choices,1+des,MIN(max_rows, n_out_choices) +des,
+                                out_highlight, windows->out_title);
                 }
                 break;
             case KEY_STAB: /* tab key */
@@ -187,6 +200,33 @@ void loop(_Windows *windows, _Menus *menus,
                 choice = item_index(auxItem);
                 enterKey = (bool) TRUE; /* mark enter pressed */
                 break;
+            case 338: /* Av Página has been pressed*/
+            if (focus == FOCUS_RIGHT){
+                    des+=max_rows;
+                    page=MIN(page+1,max_pages);
+                    if(des>=n_out_choices){
+                        des-=max_rows;
+                    }
+                (void) wclear(out_win);
+                    out_highlight = 0+des;
+                    print_out(out_win, menus->out_win_choices,1+des,MIN(max_rows, n_out_choices) +des,
+                                out_highlight, windows->out_title);
+                }
+                break;
+            case 339: /* Re Página has been pressed*/
+                if(focus == FOCUS_RIGHT){
+                    des-=max_rows;
+                    page=MAX(page-1,1);
+                    if(des<=0){
+                        des=0;
+                    }
+                (void) wclear(out_win);
+                    out_highlight = 0+des;
+                    print_out(out_win, menus->out_win_choices,1+des, MIN(max_rows, n_out_choices)+des,
+                                out_highlight, windows->out_title);
+                }
+                break;
+            
             default: /* echo pressed key */
                 auxItem = current_item(menu);
                 if (item_index(auxItem) == SEARCH) {
@@ -215,7 +255,19 @@ void loop(_Windows *windows, _Menus *menus,
                 tmpStr3 = field_buffer((forms->search_form_items)[5], 0);
                 results_search(tmpStr1, tmpStr2, tmpStr3, &n_out_choices, & (menus->out_win_choices),
                                windows->cols_out_win-4, windows->rows_out_win-2);
-                print_out(out_win, menus->out_win_choices, n_out_choices,
+                page=1;
+                des=0;
+                if(n_out_choices%max_rows==0){
+                        max_pages=n_out_choices/max_rows;
+                    }
+                    else{
+                        max_pages=(n_out_choices/max_rows)+1;
+                    }
+                rows_last_page=n_out_choices%max_rows;
+                        if(rows_last_page==0){
+                            rows_last_page=max_rows;
+                        }
+                print_out(out_win, menus->out_win_choices,1, MIN(max_rows, n_out_choices),
                           out_highlight, windows->out_title);
                 if ((bool)DEBUG) {
                     (void)snprintf(buffer, 128, "arg1=%s, arg2=%s, arg3=%s",  tmpStr1, tmpStr2, tmpStr3);
@@ -237,7 +289,19 @@ void loop(_Windows *windows, _Menus *menus,
                 tmpStr1 = field_buffer((forms->bpass_form_items)[1], 0);
                 results_bpass(tmpStr1, &n_out_choices, & (menus->out_win_choices),
                               windows->cols_out_win-4, windows->rows_out_win-2);
-                print_out(out_win, menus->out_win_choices, n_out_choices,
+                page=1;
+                des=0;
+                if(n_out_choices%max_rows==0){
+                        max_pages=n_out_choices/max_rows;
+                    }
+                    else{
+                        max_pages=(n_out_choices/max_rows)+1;
+                    }
+                rows_last_page=n_out_choices%max_rows;
+                if(rows_last_page==0){
+                            rows_last_page=max_rows;
+                }
+                print_out(out_win, menus->out_win_choices,1, MIN(max_rows, n_out_choices),
                           out_highlight, windows->out_title);
             }
             else if ((choice == BPASS) && focus == (FOCUS_RIGHT)) {

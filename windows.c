@@ -157,10 +157,17 @@ static void create_out(_Windows *windows, _Menus *menu)
                                      windows->out_title);
 
     menu->out_win_choices =
-            (char **) calloc(windows->rows_out_win, sizeof(char *));
+            (char **) calloc(99*windows->rows_out_win, sizeof(char *));
 
-    for (i = 0; i < windows->rows_out_win; i++)
+    for (i = 0; i < 99*windows->rows_out_win; i++)
         (menu->out_win_choices)[i] =
+                (char *) calloc(windows->cols_out_win, sizeof(char *));
+                
+    menu->out_win_choices_info =
+            (char **) calloc(99*windows->rows_out_win, sizeof(char *));
+
+    for (i = 0; i < 99*windows->rows_out_win; i++)
+        (menu->out_win_choices_info)[i] =
                 (char *) calloc(windows->cols_out_win, sizeof(char *));
 }
 
@@ -275,14 +282,16 @@ void _initsrc(_Windows *windows,
 
 void print_out(WINDOW *win,
                char **choices,
-               int menuitems,
+               int menuitems_min,
+               int menuitems_max,
                int highlight,
                char *title)
 /** print array of strings choices window win (usually out_win)
  *
  * @param win
  * @param choices list of fields
- * @param menuitems number of fields (maximum number of rows)
+ * @param menuitems_min first row to print
+ * @param menuitems_min last row to print
  * @param highlight highlight this row (0 -> first row)
  * @param title
  */
@@ -292,7 +301,7 @@ void print_out(WINDOW *win,
     y = 1;
     (void) box(win, 0, 0);
     (void) mvwaddstr(win, 0, 2, title);
-    for (i = 0; i < menuitems; ++i) {
+    for (i = menuitems_min-1; i < menuitems_max; ++i) {
         if (highlight == i) /* High light the present choice  */
         {
             (void) wattron(win, A_REVERSE);  /** set reverse attribute on */
