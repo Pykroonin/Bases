@@ -76,7 +76,8 @@ AS
                                            '1'                              AS transbordos,
                                            min(al.vacios)                   AS asientos,
                                            ( vl.fecha_lleg - vs.fecha_sal ) AS tiempo,
-                                           vs.aircraft_code
+                                           vs.aircraft_code,
+                                           vl.aircraft_code2
                                   FROM     vuelos_salida vs,
                                            vuelos_llegada vl,
                                            asientos_libres al
@@ -92,7 +93,8 @@ AS
                                            vl.flight_id2,
                                            vl.fecha_sal2,
                                            vl.fecha_lleg,
-                                           vs.aircraft_code)
+                                           vs.aircraft_code,
+                                           vl.aircraft_code2)
                 UNION ALL
                 SELECT *
                 FROM   (
@@ -105,6 +107,7 @@ AS
                                      '0'                                             AS transbordos,
                                      al.vacios                                       AS asientos,
                                      ( f.scheduled_arrival - f.scheduled_departure ) AS tiempo,
+                                     f.aircraft_code,
                                      f.aircraft_code
                               FROM   flights f
                               JOIN   asientos_libres al
