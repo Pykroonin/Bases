@@ -67,9 +67,9 @@ void loop(_Windows *windows, _Menus *menus,
     int out_highlight = 0; /* line highlighted in win_out window */
     int rows_out_window = 0; /* size of win_out window */
     int i = 0; /* dummy variable for loops */
-    int page=1;
+    int page=0;
     int des=0;
-    int max_pages=1;
+    int max_pages=0;
     int rows_last_page=1;
     int max_rows;
 
@@ -85,8 +85,8 @@ void loop(_Windows *windows, _Menus *menus,
 
         ch = getch(); /* get char typed by user */
         if ((bool)DEBUG) {
-            /*(void)snprintf(buffer, 128, "key pressed %d %c (%d)",  ch, ch, item_index(auxItem));*/
-            (void)snprintf(buffer, 128, "hilighted:%d, max_pages:%d, page:%d, n_out_choices:%d, max_rows:%d", out_highlight,max_pages, page, n_out_choices, max_rows);
+            /*(void)snprintf(buffer, 128, "key pressed %d %c (%d)",  ch, ch, item_index(auxItem)); */
+            (void)snprintf(buffer, 128, "hilighted:%d, max_pages:%d, page:%d, n_out_choices:%d, max_rows:%d, max_rowlastpage:%d", out_highlight,max_pages, page, n_out_choices, max_rows, rows_last_page); 
             write_msg(msg_win, buffer, -1, -1, windows->msg_title);
         }
         switch (ch) {
@@ -168,12 +168,18 @@ void loop(_Windows *windows, _Menus *menus,
             case 9:
                 /* toggle focus between win_form and win_out*/
 
-                if (focus == FOCUS_RIGHT)
+                if (focus == FOCUS_RIGHT && n_out_choices!=0){
                      focus = FOCUS_LEFT;
-                else
-                     focus = FOCUS_RIGHT;
+                    (void) snprintf(buffer, 128, "focus in window %d", focus);
+                }
+                else if(focus == FOCUS_LEFT && n_out_choices!=0){
+                    focus = FOCUS_RIGHT;
+                    (void) snprintf(buffer, 128, "focus in window %d", focus);
+                }
+                else{
+                    (void) snprintf(buffer, 128, "No hay resultados que inspeccionar");
+                }
 
-                (void) snprintf(buffer, 128, "focus in window %d", focus);
                 write_msg(msg_win, buffer, -1, -1, windows->msg_title);
                 /* If win_form is selected place the cursor in the right place */
                 if (item_index(auxItem) == SEARCH && focus == FOCUS_LEFT) {
@@ -201,7 +207,7 @@ void loop(_Windows *windows, _Menus *menus,
                 enterKey = (bool) TRUE; /* mark enter pressed */
                 break;
             case 338: /* Av Página has been pressed*/
-            if (focus == FOCUS_RIGHT){
+            if (focus == FOCUS_RIGHT && n_out_choices!=0){
                     des+=max_rows;
                     page=MIN(page+1,max_pages);
                     if(des>=n_out_choices){
@@ -214,7 +220,7 @@ void loop(_Windows *windows, _Menus *menus,
                 }
                 break;
             case 339: /* Re Página has been pressed*/
-                if(focus == FOCUS_RIGHT){
+                if(focus == FOCUS_RIGHT && n_out_choices!=0){
                     des-=max_rows;
                     page=MAX(page-1,1);
                     if(des<=0){
@@ -253,9 +259,15 @@ void loop(_Windows *windows, _Menus *menus,
                 tmpStr1 = field_buffer((forms->search_form_items)[1], 0);
                 tmpStr2 = field_buffer((forms->search_form_items)[3], 0);
                 tmpStr3 = field_buffer((forms->search_form_items)[5], 0);
-                results_search(tmpStr1, tmpStr2, tmpStr3, &n_out_choices, & (menus->out_win_choices),
+                results_search(tmpStr1, tmpStr2, tmpStr3, &n_out_choices, & (menus->out_win_choices), & (menus->out_win_choices_info),
                                windows->cols_out_win-4, windows->rows_out_win-2);
+                if (n_out_choices==0)
+                {
+                    page=0;
+                }
+                else{
                 page=1;
+                }
                 des=0;
                 if(n_out_choices%max_rows==0){
                         max_pages=n_out_choices/max_rows;
@@ -264,19 +276,26 @@ void loop(_Windows *windows, _Menus *menus,
                         max_pages=(n_out_choices/max_rows)+1;
                     }
                 rows_last_page=n_out_choices%max_rows;
-                        if(rows_last_page==0){
+                        if(rows_last_page==0    ){
                             rows_last_page=max_rows;
                         }
                 print_out(out_win, menus->out_win_choices,1, MIN(max_rows, n_out_choices),
                           out_highlight, windows->out_title);
+
                 if ((bool)DEBUG) {
-                    (void)snprintf(buffer, 128, "arg1=%s, arg2=%s, arg3=%s",  tmpStr1, tmpStr2, tmpStr3);
-                    write_msg(msg_win, buffer, -1, -1, windows->msg_title);
+
+                    if(n_out_choices == 0){
+                        snprintf(buffer, 128, "No se encontraron vuelos con los datos introducidos. Reviselos para realizar su búsqueda");
+                    }
+                    else{
+                        (void)snprintf(buffer, 128, "Busqueda encontrada .arg1=%s, arg2=%s, arg3= %s",  tmpStr1, tmpStr2, tmpStr3);
+                    }
+                write_msg(msg_win, buffer, -1, -1, windows->msg_title);
                 }
 
             }
             else if ((choice == SEARCH) && (focus == FOCUS_RIGHT)) {
-                (void)snprintf(buffer, 128, "msg=%s", (menus->out_win_choices)[out_highlight] );
+                (void)snprintf(buffer, 128, "msg=%s", (menus->out_win_choices_info)[out_highlight] );
                 write_msg(msg_win,buffer,
                           -1, -1, windows->msg_title);
             }
@@ -289,7 +308,13 @@ void loop(_Windows *windows, _Menus *menus,
                 tmpStr1 = field_buffer((forms->bpass_form_items)[1], 0);
                 results_bpass(tmpStr1, &n_out_choices, & (menus->out_win_choices),
                               windows->cols_out_win-4, windows->rows_out_win-2);
+                if (n_out_choices==0)
+                {
+                    page=0;
+                }
+                else{
                 page=1;
+                }
                 des=0;
                 if(n_out_choices%max_rows==0){
                         max_pages=n_out_choices/max_rows;

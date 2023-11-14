@@ -74,12 +74,15 @@ void    results_bpass(/*@unused@*/ char * bookID,
 
 
     *n_choices = (int)num_filas;
+    if(*n_choices<0){
+        *n_choices=0;
+    }
     max_rows = MIN(*n_choices, max_rows);
 
     
  while (SQL_SUCCEEDED(ret = SQLFetch(stmt))) {
     
-        strncpy((char*)final_array, (char*)passenger_name, MIN(strlen((char*)passenger_name)+1,20)); 
+        strcpy((char*)final_array, (char*)passenger_name); 
         if(strlen((char*)final_array)==20) final_array[21]='\0';
         strcat((char*)final_array, (char*)space); 
         strcat((char*)final_array, (char*)flight_id);
